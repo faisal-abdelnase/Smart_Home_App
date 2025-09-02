@@ -15,8 +15,15 @@ void main() {
 
       client.publishMessage("test/flutter", MqttQos.atMostOnce, builder.addString("Hello from Flutter").payload!),
 
+      client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>> c) {
+        MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
+        String pt = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+
+        log('Received message:$pt from topic: ${c[0].topic}>');
+      }),
+
       log('Connected to MQTT broker'),
-      
+
     } else {
       log('Failed to connect, status is ${value.state}')
     }
@@ -24,11 +31,26 @@ void main() {
   runApp(const SmartHomeApp());
 }
 
-class SmartHomeApp extends StatelessWidget {
+class SmartHomeApp extends StatefulWidget {
   const SmartHomeApp({super.key});
 
   @override
+  State<SmartHomeApp> createState() => _SmartHomeAppState();
+}
+
+class _SmartHomeAppState extends State<SmartHomeApp> {
+  @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text("Smart Home App"),
+        ),
+        body: const Center(
+          child: Text("Welcome to Smart Home App"),
+        ),
+      ),
+    );
   }
 }
