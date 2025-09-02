@@ -28,17 +28,40 @@ void main() {
       log('Failed to connect, status is ${value.state}')
     }
   });
-  runApp(const SmartHomeApp());
+  runApp(SmartHomeApp(client: client));
 }
 
 class SmartHomeApp extends StatefulWidget {
-  const SmartHomeApp({super.key});
+  const SmartHomeApp({super.key, required this.client});
+  final MqttServerClient client;
+
+
 
   @override
   State<SmartHomeApp> createState() => _SmartHomeAppState();
 }
 
 class _SmartHomeAppState extends State<SmartHomeApp> {
+
+
+  String data = "";
+
+
+  @override
+  void initState() {
+    widget.client.updates!.listen((List<MqttReceivedMessage<MqttMessage?>> c) {
+        
+        setState(() {
+          MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
+          String pt = MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+          data = pt;
+        });
+
+        log('Received message:$data from topic: ${c[0].topic}>');
+      });
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -47,8 +70,30 @@ class _SmartHomeAppState extends State<SmartHomeApp> {
         appBar: AppBar(
           title: const Text("Smart Home App"),
         ),
-        body: const Center(
-          child: Text("Welcome to Smart Home App"),
+        body: Center(
+          child: Column(
+            children: [
+              Text(data, style: TextStyle(color: Colors.red),),
+
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  textStyle: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold
+                  )
+                ),
+                onPressed: (){
+                  MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
+                  widget.client.publishMessage("test/flutter", MqttQos.atMostOnce, builder.addString("Hello from Flutter2").payload!);
+
+                }, 
+                child: const Text("Publish")
+              )
+            ],
+          ),
         ),
       ),
     );
